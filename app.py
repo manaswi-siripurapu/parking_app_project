@@ -4,13 +4,13 @@ from backend.models import db, User, Role
 from flask_security import Security, SQLAlchemyUserDatastore
 
 def create_app():
-    app = Flask(__name__)
+    app = Flask(__name__, static_folder='frontend', template_folder='frontend', static_url_path='/static')
     app.config.from_object(LocalDevelopmentConfig)
 
     db.init_app(app)
 
     datastore = SQLAlchemyUserDatastore(db, User, Role)
-    app.security = Security(app, datastore = datastore)
+    app.security = Security(app, datastore = datastore, register_blueprint = False)
     app.app_context().push()
 
     return app
@@ -18,10 +18,7 @@ def create_app():
 app = create_app()
 
 import backend.create_initial_data
-
-@app.route('/')
-def home():
-    return "Welcome to the Parking App home!"
+import backend.routes
 
 if(__name__ == '__main__'):
     app.run()

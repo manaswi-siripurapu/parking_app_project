@@ -13,4 +13,5 @@ with app.app_context():
         userdatastore.create_user( email = 'admin@gmail.com', username = 'admin', password = hash_password('admin123'), mobile_num = '1234567890', age = 30)
     if(not userdatastore.find_user(email = 'testuser@gmail.com')):
         userdatastore.create_user( email = 'testuser@gmail.com', username = 'test_user', password = hash_password('testuser123'), mobile_num = '0987654321', age = 25)    
+    
     db.session.commit()
