@@ -11,11 +11,16 @@ class User(db.Model, UserMixin):
     password = db.Column(db.String(200), nullable=False)
     mobile_num = db.Column(db.String(10), nullable=False)
     age = db.Column(db.Integer, nullable=False)
+
     #flask-security specific fields
     fs_uniquifier = db.Column(db.String, unique = True, nullable = False)
     active = db.Column(db.Boolean, default = True)
 
     roles = db.relationship('Role', secondary='user_roles', backref=db.backref('users', lazy='dynamic'))
+
+    @property
+    def role_names(self):
+        return [role.name for role in self.roles]
 
 class Role(db.Model, RoleMixin):
     role_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
@@ -23,11 +28,9 @@ class Role(db.Model, RoleMixin):
     description = db.Column(db.String(200), nullable=True)
 
 class UserRoles(db.Model):
-    userrole_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.user_id'), primary_key=True)
+    # userrole_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     role_id = db.Column(db.Integer, db.ForeignKey('role.role_id'), primary_key=True)
-    # user = db.relationship(User, backref='roles')
-    # role = db.relationship(Role, backref='users')
+    user_id = db.Column(db.Integer, db.ForeignKey('user.user_id'), primary_key=True)
 
 class ParkingLot(db.Model):
     plot_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
@@ -35,13 +38,13 @@ class ParkingLot(db.Model):
     address = db.Column(db.String(200), nullable=False)
     pincode = db.Column(db.String(6), nullable=False)
     total_slots = db.Column(db.Integer, nullable=False)
-    price = db.Column(db.Float, nullable=False)
+    price = db.Column(db.Float, nullable=False) #price per hour
 
-    spots = db.relationship('ParkingSpot', backref='parking_lot', lazy=True)
+    spots = db.relationship('ParkingSpot', backref='parking_lot', lazy=True, cascade="all, delete-orphan")
 
 class ParkingSpot(db.Model):
     pspot_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    plot_id = db.Column(db.Integer, db.ForeignKey('parking_lot.plot_id'), nullable=False)
+    plot_id = db.Column(db.Integer, db.ForeignKey('parking_lot.plot_id', ondelete="CASCADE"), nullable=False)
     status = db.Column(db.Boolean, default=False)
 
     bookings = db.relationship('Booking', backref='parking_spot', lazy=True)

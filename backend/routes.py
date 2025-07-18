@@ -4,8 +4,13 @@ from flask_security import auth_required, verify_password
 datastore = app.security.datastore
 
 
-@app.get('/')
-def home():
+# @app.get('/')
+# def home():
+#     return render_template('index.html')
+
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def catch_all(path):
     return render_template('index.html')
 
 @app.get('/protected')
@@ -37,7 +42,7 @@ def login():
                             "username": user.username,
                             "email": user.email,
                             "mobile_num": user.mobile_num,
-                            # "role": user.roles[0],
+                            "roles": [role.name for role in user.roles],
                             "user_id": user.user_id,
                             "age": user.age
                             }
@@ -50,20 +55,30 @@ def register():
     username = data.get('username')
     email = data.get('email')
     password = data.get('password')
-    # mobile_num = data.get('mobile_num')
-    # age = data.get('age')
+    mobile_num = data.get('mobile_num', '0000000000')  # Default if not provided
+    age = data.get('age', 18)  # Default if not provided
+    role = data.get('role', 'user')  # Default to 'user' if not provided
 
-    if not username or not email or not password :
+    if not username or not email or not password:
         return jsonify({"error": "Missing required fields"}), 400
 
-    if datastore.find_user(email=email):
-        return jsonify({"error": "User with this email already exists"}), 409
+    if datastore.find_user(email=email) or datastore.find_user(username=username):
+        return jsonify({"error": "User with this email or username already exists"}), 409
 
     try:
-        user = datastore.create_user(username=username, email=email, password=password, mobile_num='6363645454', age=19)
+        user = datastore.create_user(
+            username=username,
+            email=email,
+            password=password,
+            mobile_num=mobile_num,
+            age=age
+        )
+        datastore.commit()
+        # Only allow 'admin' role if you trust the source!
+        datastore.add_role_to_user(user, role)
         datastore.commit()
         return jsonify({'message': 'User registered successfully', 'user_id': user.user_id}), 201
-    
-    except:
+
+    except Exception as e:
         datastore.rollback()
-        return jsonify({"error": "Failed to register user"}), 500
+        return jsonify({"error": f"Failed to register user: {str(e)}"}), 500
