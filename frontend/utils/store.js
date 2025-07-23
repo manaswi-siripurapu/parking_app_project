@@ -1,15 +1,20 @@
 const store = new Vuex.Store({
     state: {
         auth_token: null,
-        roles: [],      // store as array if backend returns array
+        roles: [], // Initialize as an empty array
         loggedin: false,
         user_id: null,
+        toast: { // This whole 'toast' object must be in state
+            show: false,
+            message: '',
+            type: 'info'
+        }
     },
     mutations: {
         setUser(state, payload) {
             if (payload) {
                 state.auth_token = payload.token;
-                state.roles = payload.roles;
+                state.roles = payload.roles || []; // Ensure it's an array, default to empty
                 state.loggedin = true;
                 state.user_id = payload.user_id;
                 localStorage.setItem('user', JSON.stringify(payload));
@@ -18,26 +23,42 @@ const store = new Vuex.Store({
                     const user = JSON.parse(localStorage.getItem('user'));
                     if (user) {
                         state.auth_token = user.token;
-                        state.roles = user.roles;
+                        state.roles = user.roles || []; // Ensure it's an array, default to empty
                         state.loggedin = true;
                         state.user_id = user.user_id;
                     }
                 } catch {
-                    console.warn('not logged in');
+                    console.warn('not logged in or localStorage item invalid');
+                    // Reset state if localStorage item is invalid/corrupted
+                    state.auth_token = null;
+                    state.roles = [];
+                    state.loggedin = false;
+                    state.user_id = null;
+                    localStorage.removeItem('user');
                 }
             }
         },
         logout(state) {
             state.auth_token = null;
-            state.roles = null;
+            state.roles = []; // Set to empty array, not null
             state.loggedin = false;
             state.user_id = null;
             localStorage.removeItem('user');
+        },
+        showToast(state, payload) {
+            state.toast.show = true;
+            state.toast.message = payload.message;
+            state.toast.type = payload.type || 'info';
+        },
+        hideToast(state) {
+            state.toast.show = false;
+            state.toast.message = '';
+            state.toast.type = 'info';
         }
     },
     actions: {},
 });
 
-store.commit('setUser');
+store.commit('setUser'); // This line is crucial for initial state hydration
 
 export default store;

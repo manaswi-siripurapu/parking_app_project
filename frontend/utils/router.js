@@ -2,27 +2,55 @@ import LoginPage from "../pages/LoginPage.js";
 import RegisterPage from "../pages/RegisterPage.js";
 import ParkingLotList from "../pages/ParkingLotList.js";
 import store from "../utils/store.js";
+import AdminDashboard from "../pages/AdminDashboard.js";
+import AddPLot from "../pages/AddPLot.js";
+import EditPLot from "../pages/EditPLot.js";
+
+Vue.use(VueRouter);
 
 const Home = {
     template: `
-        <div>
-            <h1>Welcome to the Parking App</h1>
-            <p>
-                Please 
-                <router-link to="/login">login</router-link> 
-                or 
-                <router-link to="/register">register</router-link> 
-                to continue.
-            </p>
+        <div class="container-fluid min-vh-100 d-flex align-items-center justify-content-center bg-light p-0">
+            <div class="row w-100 m-0 p-4">
+                <!-- Left Half: Image Section -->
+                <div class="col-12 col-md-6 d-flex align-items-center justify-content-center p-0">
+                    <div class="position-relative w-100 h-100 d-flex align-items-center justify-content-center" style="min-height: 400px;">
+                        <img src="https://static.vecteezy.com/system/resources/previews/023/642/030/non_2x/parking-smartphone-app-public-car-park-urban-transport-tiny-woman-looking-for-parking-lot-for-park-automobile-modern-flat-cartoon-style-illustration-on-white-background-vector.jpg" class="img-fluid w-100 h-100 object-fit-cover rounded-lg " >
+                    </div>
+                </div>
+
+                <!-- Right Half: Content Section -->
+                <div class="col-12 col-md-6 d-flex flex-column align-items-center justify-content-center p-4 p-md-5 text-center">
+                    <h1 class="display-4 font-weight-bold text-dark mb-3">
+                        PARKEASY - Vehicle Parking Management App
+                    </h1>
+                    <p class="lead text-muted mb-4 max-width-500">
+                        Seamlessly find and book parking spots, manage your vehicle's stay, and enjoy a hassle-free parking experience. Your smart solution for urban parking.
+                    </p>
+                    <div class="d-flex flex-column flex-sm-row justify-content-center w-100" style="max-width: 400px;">
+                        <router-link to="/login" class="btn btn-outline-primary btn-lg flex-fill mb-3 mb-sm-0 mr-sm-3">
+                            Sign In
+                        </router-link>
+                        <router-link to="/register" class="btn btn-outline-primary btn-lg flex-fill">
+                            Sign Up
+                        </router-link>
+                    </div>
+                </div>
+            </div>
         </div>
     `,
+    // No data or methods needed for this simple display component
+    // If you add any, ensure they are defined here.
 }
 
 const routes = [
     {path: "/", component: Home},
     {path: "/login", component: LoginPage},
     {path: "/register", component: RegisterPage},
-    {path: "/api/parking_lots", component: ParkingLotList, meta : { requiresLogin: true, roles: ['user'] } },
+    {path: "/api/parking_lots", component: ParkingLotList, meta : { requiresLogin: true } },
+    {path: "/admin/dashboard", component: AdminDashboard, meta: { requiresLogin: true, roles: ['admin'] } },
+    {path: "/add_parking_lot", component: AddPLot, meta: { requiresLogin: true, roles: ['admin'] } },
+    {path: "/edit_parking_lot/:plot_id", component: EditPLot, meta: { requiresLogin: true, roles: ['admin'] } },
 ]
 
 const router = new VueRouter({
@@ -37,7 +65,10 @@ router.beforeEach((to, from, next) => {
             to.meta.roles &&
             !to.meta.roles.some(role => store.state.roles && store.state.roles.includes(role))
         ) {
-            alert('role not authorized');
+            store.commit('showToast', {
+                message: 'You are not authorized to access this page.',
+                type: 'danger'
+            });
             next({ path: '/' });
         } else {
             next();

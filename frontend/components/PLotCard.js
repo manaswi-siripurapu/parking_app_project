@@ -4,14 +4,20 @@ export default {
     <div>
       <!-- Parking Lot Card -->
       <div class="card mb-3">
-        <img class="card-img-top" src="https://via.placeholder.com/300x150" alt="Parking Lot">
         <div class="card-body">
           <h5 class="card-title">{{ parkingLot.location }}</h5>
           <p class="card-text">Total Slots: {{ parkingLot.total_slots }}</p>
           <p class="card-text">Price: ₹{{ parkingLot.price }} per hour</p>
-          <button type="button" class="btn btn-outline-primary" @click="showModal">
+          <button v-if="$store.state.loggedin && $store.state.roles && $store.state.roles.includes('user')" type="button" class="btn btn-outline-primary" @click="showModal">
             Book
           </button>
+          <button v-if="$store.state.loggedin && $store.state.roles && $store.state.roles.includes('admin')" type="button" class="btn btn-outline-secondary" @click="editParkingLot">
+            Edit
+          </button>
+          <button v-if="$store.state.loggedin && $store.state.roles && $store.state.roles.includes('admin')" type="button" class="btn btn-outline-danger" @click="deleteParkingLot">
+            Delete
+          </button>
+
         </div>
       </div>
 
@@ -21,7 +27,7 @@ export default {
           <div class="modal-content shadow">
             <div class="modal-header">
               <h5 class="modal-title">Booking Confirmation</h5>
-              <button type="button" class="btn-close" @click="hideModal"></button>
+              <button type="button" class="close" @click="hideModal"></button>
             </div>
 
             <div class="modal-body">
@@ -59,10 +65,60 @@ export default {
         this.bsModal.hide();
       }
     },
-    confirmOccupy() {
-      // You can replace this with an actual API POST request
-      alert(`Parking spot at ${this.parkingLot.location} booked!`);
-      this.hideModal();
-    },
+    async confirmOccupy() {
+          this.hideModal(); // Hide the modal immediately
+          try {
+              const res = await fetch(`${location.origin}/api/bookings`, {
+                  method: 'POST',
+                  headers: {
+                      'Content-Type': 'application/json',
+                      'Authentication-Token': this.$store.state.auth_token,
+                  },
+                  body: JSON.stringify({
+                      plot_id: this.parkingLot.plot_id, // Send plot_id, backend will assign pspot_id
+                  }),
+              });
+              if (res.ok) {
+                  const data = await res.json();
+                  this.$store.commit('showToast', { message: `Spot occupied successfully! Booking ID: ${data.booking_id}. Spot: ${data.pspot_id}`, type: 'success' });
+                  console.log('Spot occupied successfully:', data);
+                  // After successful occupation, you might want to redirect the user
+                  // to a page showing their current active booking or history.
+                  this.$router.push('/history'); // Redirect to a history page
+              } else {
+                  const errorData = await res.json();
+                  this.$store.commit('showToast', {
+                      message: errorData.message || 'Failed to occupy spot.',
+                      type: 'danger'
+                  });
+                  console.error('Occupation failed:', res.status, errorData.message || res.statusText);
+              }
+          } catch (error) {
+              this.$store.commit('showToast', { message: 'Network error during occupation. Please try again.', type: 'danger' });
+              console.error('Network error during occupation:', error);
+          }
+      },
+      async deleteParkingLot() {
+          // Ensure this matches the singular endpoint /api/parking_lot/<plot_id>
+          const res = await fetch(`${location.origin}/api/parking_lot/${this.parkingLot.plot_id}`, {
+              method: 'DELETE',
+              headers: {
+                  'Authentication-Token': this.$store.state.auth_token,
+                  // 'Content-Type': 'application/json' is not strictly needed for DELETE requests without a body
+              }
+          });
+          if (res.ok) {
+              this.$store.commit('showToast', { message: 'Parking lot deleted successfully!', type: 'success' });
+              this.$emit('parking-lot-deleted', this.parkingLot.plot_id); // Notify parent to update list
+          } else {
+              const errorData = await res.json();
+              this.$store.commit('showToast', { message: errorData.message || 'Failed to delete parking lot.', type: 'danger' });
+              console.error('Delete failed:', res.status, errorData.message || res.statusText);
+          }
+      },
+      async editParkingLot() {
+          // Redirect to edit page with plot_id
+          this.$router.push({ path: `/edit_parking_lot/${this.parkingLot.plot_id}` });
+      }
   },
 };

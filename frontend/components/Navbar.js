@@ -10,31 +10,31 @@ export default {
 
         <div v-if="!$store.state.loggedin" class="collapse navbar-collapse" id="navbarSupportedContent">
           <ul class="navbar-nav mr-auto">
-            <li class="nav-item active">
-              <router-link class="nav-link" to="/login">Login</router-link>
+            <li class="nav-item">
+              <router-link class="nav-link" to="/login">SignIn</router-link>
             </li>
-            <li class="nav-item active">
-              <router-link class="nav-link" to="/register">Register</router-link>
+            <li class="nav-item">
+              <router-link class="nav-link" to="/register">SignUp</router-link>
             </li>
           </ul>
         </div>
 
-        <div v-else-if="$store.state.loggedin and $store.state.roles.includes('user')" class="collapse navbar-collapse" id="navbarSupportedContent">
+        <div v-else-if="$store.state.loggedin && $store.state.roles && $store.state.roles.includes('user')" class="collapse navbar-collapse" id="navbarSupportedContent">
           
           <ul class="navbar-nav mr-auto">
-            <li class="nav-item active">
+            <li class="nav-item">
               <router-link class="nav-link" to="/api/parking_lots">Parking Lots</router-link>
             </li>
-            <li class="nav-item active">
+            <li class="nav-item">
               <router-link class="nav-link" to="/history">History</router-link>
             </li>
-            <li class="nav-item active">
+            <li class="nav-item">
               <router-link class="nav-link" to="/profile">My Profile</router-link>
             </li>
-            <li class="nav-item active">
+            <li class="nav-item">
               <router-link class="nav-link" to="/about">About</router-link>
             </li>
-            <li class="nav-item active">
+            <li class="nav-item">
               <a class="nav-link" href="#" @click.prevent="logout">Logout</a>
             </li>
           </ul>
@@ -46,25 +46,25 @@ export default {
 
         </div>
 
-        <div v-else-if="$store.state.loggedin and $store.state.roles.includes('admin')" class="collapse navbar-collapse" id="navbarSupportedContent">
+        <div v-else-if="$store.state.loggedin && $store.state.roles && $store.state.roles.includes('admin')" class="collapse navbar-collapse" id="navbarSupportedContent">
           
           <ul class="navbar-nav mr-auto">
-            <li class="nav-item active">
-              <router-link class="nav-link" to="/api/parking_lots">Parking Lots</router-link>
+            <li class="nav-item">
+              <router-link class="nav-link" to="/admin/dashboard">Parking Lots</router-link>
             </li>
-            <li class="nav-item active">
+            <li class="nav-item">
               <router-link class="nav-link" to="/history">Parking Spots</router-link>
             </li>
-            <li class="nav-item active">
+            <li class="nav-item">
               <router-link class="nav-link" to="/about">User Analytics</router-link>
             </li>
-            <li class="nav-item active">
+            <li class="nav-item">
               <router-link class="nav-link" to="/about">Users</router-link>
             </li>
-            <li class="nav-item active">
+            <li class="nav-item">
               <router-link class="nav-link" to="/profile">My Profile</router-link>
             </li>
-            <li class="nav-item active">
+            <li class="nav-item">
               <a class="nav-link" href="#" @click.prevent="logout">Logout</a>
             </li>
           </ul>
@@ -82,6 +82,7 @@ export default {
     methods: {
       logout() {
         this.$store.commit('logout');
+        this.$store.commit('showToast', { message: 'Logged out successfully!', type: 'success' });
         this.$router.push('/');
       }
     }

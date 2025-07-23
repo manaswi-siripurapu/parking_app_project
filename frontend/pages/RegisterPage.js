@@ -1,29 +1,115 @@
 export default {
-  template:`
-    <div>
-        <input type="text" placeholder="Username" v-model="username" />
-        <input type="email" placeholder="Email" v-model="email" />
-        <input type="password" placeholder="Password" v-model="password" />
-        <button class='btn btn-primary' @click="submitRegister"> Register </button>
-    </div>
+    name: 'RegisterPage',
+    template: `
+        <div class="container d-flex justify-content-center align-items-center min-vh-100">
+            <div class="card shadow-lg p-4 p-md-5" style="max-width: 500px; width: 100%;">
+                <h2 class="card-title text-center mb-4">Sign Up for ParkEasy</h2>
+                <form @submit.prevent="submitRegister">
+                    <div class="form-group mb-3">
+                        <label for="username">Username</label>
+                        <input type="text" class="form-control" id="username" placeholder="Choose a username" v-model="username" required>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label for="email">Email address</label>
+                        <input type="email" class="form-control" id="email" placeholder="Enter your email" v-model="email" required>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label for="password">Password</label>
+                        <input type="password" class="form-control" id="password" placeholder="Create a password" v-model="password" required>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label for="mobile_num">Mobile Number</label>
+                        <input type="tel" class="form-control" id="mobile_num" placeholder="Enter your 10-digit mobile number" v-model="mobile_num" required pattern="[0-9]{10}" title="Mobile number must be 10 digits">
+                    </div>
+                    <div class="form-group mb-4">
+                        <label for="age">Age</label>
+                        <input type="number" class="form-control" id="age" placeholder="Enter your age" v-model.number="age" required min="18">
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary btn-block btn-lg">Register</button>
+                </form>
+
+                <div v-if="errorMessage" class="alert alert-danger mt-4" role="alert">
+                    {{ errorMessage }}
+                </div>
+                <div v-if="successMessage" class="alert alert-success mt-4" role="alert">
+                    {{ successMessage }}
+                </div>
+                <p class="text-center mt-3">
+                    Already have an account? <router-link to="/login">Sign In</router-link>
+                </p>
+            </div>
+        </div>
     `,
     data() {
         return {
-            username: null,
-            email: null,
-            password: null,
-            role: 'user', // Default role
+            username: '',
+            email: '',
+            password: '',
+            mobile_num: '',
+            age: null,
+            errorMessage: '',   // Local error message
+            successMessage: '', // Local success message
         }
     },
     methods: {
         async submitRegister() {
-            const res = await fetch(location.origin + '/register', 
-                {
-                    method: 'POST', 
+            this.errorMessage = '';   // Clear previous messages
+            this.successMessage = ''; // Clear previous messages
+
+            if (!this.username || !this.email || !this.password || !this.mobile_num || this.age === null) {
+                this.errorMessage = 'Please fill in all required fields.';
+                return;
+            }
+            if (!/^\d{10}$/.test(this.mobile_num)) {
+                this.errorMessage = 'Mobile number must be exactly 10 digits.';
+                return;
+            }
+            if (this.age !== null && this.age < 18) { // Check if age is provided and less than 18
+                this.errorMessage = 'You must be at least 18 years old to register.';
+                return;
+            }
+
+            try {
+                const res = await fetch(location.origin + '/register', {
+                    method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({'username': this.username, 'email': this.email,'password': this.password, 'role': this.role}),});
-            if (res.ok) {
-                console.log('signin successful');
+                    body: JSON.stringify({
+                        'username': this.username,
+                        'email': this.email,
+                        'password': this.password,
+                        'mobile_num': this.mobile_num,
+                        'age': this.age,
+                    }),
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    this.successMessage = data.message || 'Registration successful! You can now log in.';
+                    
+                    // Clear form fields
+                    this.username = '';
+                    this.email = '';
+                    this.password = '';
+                    this.mobile_num = '';
+                    this.age = null;
+
+                    // Redirect to login after a short delay
+                    setTimeout(() => {
+                        this.$router.push('/login');
+                    }, 1000);
+                } else {
+                    const errorData = await res.json();
+                    if (res.status === 409) {
+                        this.errorMessage = errorData.error || 'User with this email or username already exists.';
+                    } else {
+                        // Handle other potential errors (e.g., 500 from backend)
+                        this.errorMessage = errorData.error || 'Registration failed. Please try again.';
+                    }
+                }
+            } catch (error) {
+                this.errorMessage = 'Network error or unexpected issue. Please check your connection and try again.';
+                console.error('Network error during registration:', error);
             }
         }
     }

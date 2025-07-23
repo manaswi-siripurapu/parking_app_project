@@ -1,8 +1,11 @@
+from datetime import datetime
 from flask import current_app as app, jsonify, render_template, request
 from flask_security import auth_required, verify_password
+from backend.celery.tasks import add
+from celery.result import AsyncResult
 
 datastore = app.security.datastore
-
+cache = app.cache
 
 # @app.get('/')
 # def home():
@@ -12,6 +15,24 @@ datastore = app.security.datastore
 @app.route('/<path:path>')
 def catch_all(path):
     return render_template('index.html')
+
+@app.get('/celery')
+def celery():
+    task = add.delay(10, 20)
+    return {'task_id': task.id}
+
+@app.get('/get-celery-data/<task_id>')
+def get_celery_data(task_id):
+    result = AsyncResult(task_id)
+    if result.ready():
+        return {'result': result.result}, 200
+    else:
+        return {'message': 'task is not ready yet'}, 405
+
+@app.get('/cache')
+@cache.cached(timeout = 5)
+def cache_test():
+    return{"current time": str(datetime.now())}
 
 @app.get('/protected')
 @auth_required()
@@ -26,15 +47,18 @@ def login():
     email = data.get('email')
     password = data.get('password')
 
-    if not username or not email or not password:
-        return jsonify({"error": "Missing required fields"}), 400
+    if not (username or email) or not password:
+        return jsonify({"error": "Missing required fields (username/email and password)"}), 400
     
-    user = datastore.find_user(username=username, email=email)
+    user = None
+    if email: # Prioritize finding by email if provided
+        user = datastore.find_user(email=email)
+    if not user and username: # If not found by email, try by username
+        user = datastore.find_user(username=username)
 
     if not user:
         return jsonify({"error": "User not found"}), 404
     if not verify_password(password, user.password): 
-        #or user.verify_password(password): is also valid
         return jsonify({"error": "Invalid password"}), 401
     else:
         return jsonify({'token': user.get_auth_token(),
@@ -55,15 +79,18 @@ def register():
     username = data.get('username')
     email = data.get('email')
     password = data.get('password')
-    mobile_num = data.get('mobile_num', '0000000000')  # Default if not provided
-    age = data.get('age', 18)  # Default if not provided
-    role = data.get('role', 'user')  # Default to 'user' if not provided
+    mobile_num = data.get('mobile_num') # Expect from frontend
+    age = data.get('age')             # Expect from frontend
 
-    if not username or not email or not password:
-        return jsonify({"error": "Missing required fields"}), 400
+    # Basic validation for required fields
+    if not (username and email and password and mobile_num and age is not None):
+        return jsonify({"error": "Missing required fields (username, email, password, mobile_num, age)"}), 400
 
     if datastore.find_user(email=email) or datastore.find_user(username=username):
         return jsonify({"error": "User with this email or username already exists"}), 409
+    
+    if(age < 18):
+        return jsonify({"error": "User must be at least 18 years old"}), 400
 
     try:
         user = datastore.create_user(
@@ -74,11 +101,18 @@ def register():
             age=age
         )
         datastore.commit()
-        # Only allow 'admin' role if you trust the source!
-        datastore.add_role_to_user(user, role)
+        
+        default_user_role = datastore.find_role('user') 
+        if not default_user_role: 
+            default_user_role = datastore.find_or_create_role(name='user', description='Regular user with limited permissions')
+            datastore.commit() 
+
+        datastore.add_role_to_user(user, default_user_role) # Assign the 'user' role
         datastore.commit()
+        
         return jsonify({'message': 'User registered successfully', 'user_id': user.user_id}), 201
 
     except Exception as e:
-        datastore.rollback()
+        datastore.session.rollback()
+        app.logger.error(f"Error during user registration: {e}", exc_info=True)
         return jsonify({"error": f"Failed to register user: {str(e)}"}), 500

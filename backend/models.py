@@ -28,7 +28,6 @@ class Role(db.Model, RoleMixin):
     description = db.Column(db.String(200), nullable=True)
 
 class UserRoles(db.Model):
-    # userrole_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     role_id = db.Column(db.Integer, db.ForeignKey('role.role_id'), primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.user_id'), primary_key=True)
 
@@ -38,7 +37,7 @@ class ParkingLot(db.Model):
     address = db.Column(db.String(200), nullable=False)
     pincode = db.Column(db.String(6), nullable=False)
     total_slots = db.Column(db.Integer, nullable=False)
-    price = db.Column(db.Float, nullable=False) #price per hour
+    price = db.Column(db.Numeric(precision=10, scale=2), nullable=False) 
 
     spots = db.relationship('ParkingSpot', backref='parking_lot', lazy=True, cascade="all, delete-orphan")
 
@@ -54,7 +53,7 @@ class Booking(db.Model):
     pspot_id = db.Column(db.Integer, db.ForeignKey('parking_spot.pspot_id'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.user_id'), nullable=False)
     start_time = db.Column(db.DateTime, nullable=False)
-    end_time = db.Column(db.DateTime, nullable=False)
-    total_cost = db.Column(db.Float, nullable=False)
+    end_time = db.Column(db.DateTime, nullable=True)
+    total_cost = db.Column(db.Numeric(precision=10, scale=2), nullable=True)
 
     user = db.relationship('User', backref='bookings', lazy=True)
