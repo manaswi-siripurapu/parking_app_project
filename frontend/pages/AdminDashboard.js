@@ -38,6 +38,10 @@ export default {
                         v-if="$store.state.loggedin && $store.state.roles && $store.state.roles.includes('admin')">
                     Add New Parking Lot
                 </button>
+                <button class="btn btn-primary btn-lg" @click="create_csv"
+                        v-if="$store.state.loggedin && $store.state.roles && $store.state.roles.includes('admin')">
+                    Download Details
+                </button>
             </div>
         </div>
     `,
@@ -88,6 +92,23 @@ export default {
         },
         handleParkingLotDeleted(deletedPlotId) { 
             this.fetchParkingLots(); 
+        },
+        async create_csv(){
+            const res = await fetch(location.origin + '/create-csv', {
+                headers : {
+                    'Authentication-Token' : this.$store.state.auth_token
+                }
+            })
+            const task_id = (await res.json()).task_id
+
+            const interval = setInterval(async() => {
+                const res = await fetch(`${location.origin}/get-csv/${task_id}` )
+                if (res.ok){
+                    console.log('data is ready')
+                    window.open(`${location.origin}/get-csv/${task_id}`)
+                    clearInterval(interval)
+                }
+            }, 100)
         }
     },
     async mounted() {

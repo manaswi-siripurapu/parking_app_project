@@ -1,7 +1,7 @@
 from datetime import datetime
-from flask import current_app as app, jsonify, render_template, request
+from flask import current_app as app, jsonify, render_template, request, send_file
 from flask_security import auth_required, verify_password
-from backend.celery.tasks import add
+from backend.celery.tasks import add, create_csv
 from celery.result import AsyncResult
 
 datastore = app.security.datastore
@@ -26,6 +26,19 @@ def get_celery_data(task_id):
     result = AsyncResult(task_id)
     if result.ready():
         return {'result': result.result}, 200
+    else:
+        return {'message': 'task is not ready yet'}, 405
+
+@app.get('/create-csv')
+def createCSV():
+    task = create_csv.delay()
+    return {'task_id': task.id}, 200
+
+@app.get('/get-csv/<csv_task_id>')
+def getCSV(csv_task_id):
+    result = AsyncResult(csv_task_id)
+    if result.ready():
+        return send_file(f'./backend/celery/user-downloads/{result.result}'), 200
     else:
         return {'message': 'task is not ready yet'}, 405
 

@@ -21,8 +21,6 @@ def createApp():
     cache.init_app(app)
     app.cache = cache
 
-    excel.init_excel(app)
-
     #flask security
     datastore = SQLAlchemyUserDatastore(db, User, Role)
     app.cache = cache
@@ -42,6 +40,8 @@ celery_app = celery_init_app(app)
 
 import backend.create_initial_data
 import backend.routes
+
+excel.init_excel(app)
 
 if (__name__ == '__main__'):
     app.run()
