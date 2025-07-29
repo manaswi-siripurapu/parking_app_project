@@ -53,7 +53,7 @@ export default {
             if (newValue) {
                 setTimeout(() => {
                     this.hideToast();
-                }, 4000); // FIX: Hide after 2 seconds
+                }, 2000); // FIX: Hide after 2 seconds
             }
         }
     }

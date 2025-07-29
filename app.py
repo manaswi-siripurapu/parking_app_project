@@ -4,6 +4,7 @@ from backend.config import LocalDevelopmentConfig
 from backend.models import db, User, Role
 from flask_security import Security, SQLAlchemyUserDatastore, auth_required
 from backend.extensions.cache_ext import cache
+from backend.create_initial_data import initialize_database
 from backend.celery.celery_factory import celery_init_app
 import flask_excel as excel
 
@@ -44,4 +45,6 @@ import backend.routes
 excel.init_excel(app)
 
 if (__name__ == '__main__'):
+    with app.app_context(): # Ensure this call is within an app context
+        initialize_database()
     app.run()

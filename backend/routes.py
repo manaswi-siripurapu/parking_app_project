@@ -1,6 +1,6 @@
 from datetime import datetime
 from flask import current_app as app, jsonify, render_template, request, send_file
-from flask_security import auth_required, verify_password
+from flask_security import auth_required, verify_password, hash_password
 from backend.celery.tasks import add, create_csv
 from celery.result import AsyncResult
 
@@ -109,7 +109,7 @@ def register():
         user = datastore.create_user(
             username=username,
             email=email,
-            password=password,
+            password=hash_password(password),
             mobile_num=mobile_num,
             age=age
         )

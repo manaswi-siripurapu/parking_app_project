@@ -1,5 +1,5 @@
 export default {
-  props: ['parkingLot'],
+  props: ['parkingLot', 'hasActiveBooking'], 
   template: `
     <div>
       <!-- Parking Lot Card -->
@@ -8,9 +8,18 @@ export default {
           <h5 class="card-title">{{ parkingLot.location }}</h5>
           <p class="card-text">Total Slots: {{ parkingLot.total_slots }}</p>
           <p class="card-text">Price: ₹{{ parkingLot.price }} per hour</p>
-          <button v-if="$store.state.loggedin && $store.state.roles && $store.state.roles.includes('user')" type="button" class="btn btn-outline-primary" @click="showModal">
-            Book
+          <!-- Occupy Button for user -->
+          
+          <button
+            v-if="$store.state.loggedin && $store.state.roles && $store.state.roles.includes('user')"
+            :disabled="userHasActiveBooking"
+            type="button"
+            class="btn btn-outline-primary"
+            @click="showModal"
+          >
+            Occupy Now
           </button>
+
           <button v-if="$store.state.loggedin && $store.state.roles && $store.state.roles.includes('admin')" type="button" class="btn btn-outline-secondary" @click="editParkingLot">
             Edit
           </button>
@@ -66,38 +75,43 @@ export default {
       }
     },
     async confirmOccupy() {
-          this.hideModal(); // Hide the modal immediately
-          try {
-              const res = await fetch(`${location.origin}/api/bookings`, {
-                  method: 'POST',
-                  headers: {
-                      'Content-Type': 'application/json',
-                      'Authentication-Token': this.$store.state.auth_token,
-                  },
-                  body: JSON.stringify({
-                      plot_id: this.parkingLot.plot_id, // Send plot_id, backend will assign pspot_id
-                  }),
-              });
-              if (res.ok) {
-                  const data = await res.json();
-                  this.$store.commit('showToast', { message: `Spot occupied successfully! Booking ID: ${data.booking_id}. Spot: ${data.pspot_id}`, type: 'success' });
-                  console.log('Spot occupied successfully:', data);
-                  // After successful occupation, you might want to redirect the user
-                  // to a page showing their current active booking or history.
-                  this.$router.push('/history'); // Redirect to a history page
-              } else {
-                  const errorData = await res.json();
-                  this.$store.commit('showToast', {
-                      message: errorData.message || 'Failed to occupy spot.',
-                      type: 'danger'
-                  });
-                  console.error('Occupation failed:', res.status, errorData.message || res.statusText);
-              }
-          } catch (error) {
-              this.$store.commit('showToast', { message: 'Network error during occupation. Please try again.', type: 'danger' });
-              console.error('Network error during occupation:', error);
-          }
-      },
+      this.hideModal();
+      try {
+        const res = await fetch(`${location.origin}/api/bookings`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authentication-Token': this.$store.state.auth_token,
+          },
+          body: JSON.stringify({
+            plot_id: this.parkingLot.plot_id,
+          }),
+        });
+
+        const data = await res.json();
+        if (res.ok) {
+          this.$store.commit('showToast', {
+            message: `Spot occupied successfully! Booking ID: ${data.booking_id}. Spot: ${data.pspot_id}`,
+            type: 'success'
+          });
+
+          // 🔁 Refresh the current page (UserDashboard)
+          this.$emit('booking-created');  // <-- this reloads the current route & triggers mounted()
+        } else {
+          this.$store.commit('showToast', {
+            message: data.message || 'Failed to occupy spot.',
+            type: 'danger'
+          });
+          console.error('Occupation failed:', res.status, data.message || res.statusText);
+        }
+      } catch (error) {
+        this.$store.commit('showToast', {
+          message: 'Network error during occupation. Please try again.',
+          type: 'danger'
+        });
+        console.error('Network error during occupation:', error);
+      }
+    },
       async deleteParkingLot() {
           // Ensure this matches the singular endpoint /api/parking_lot/<plot_id>
           const res = await fetch(`${location.origin}/api/parking_lot/${this.parkingLot.plot_id}`, {
@@ -121,4 +135,9 @@ export default {
           this.$router.push({ path: `/edit_parking_lot/${this.parkingLot.plot_id}` });
       }
   },
+  computed: {
+    userHasActiveBooking() {
+      return this.$store.state.activeBooking !== null;
+    }
+  }
 };

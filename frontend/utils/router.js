@@ -1,10 +1,13 @@
 import LoginPage from "../pages/LoginPage.js";
 import RegisterPage from "../pages/RegisterPage.js";
-import ParkingLotList from "../pages/ParkingLotList.js";
+import UserDashboard from "../pages/UserDashboard.js";
 import store from "../utils/store.js";
 import AdminDashboard from "../pages/AdminDashboard.js";
 import AddPLot from "../pages/AddPLot.js";
 import EditPLot from "../pages/EditPLot.js";
+import Profile from "../pages/Profile.js"
+import UserAnalytics from "../pages/UserAnalytics.js";
+import UserHistory from "../pages/UserHistory.js";
 
 Vue.use(VueRouter);
 
@@ -47,10 +50,17 @@ const routes = [
     {path: "/", component: Home},
     {path: "/login", component: LoginPage},
     {path: "/register", component: RegisterPage},
-    {path: "/api/parking_lots", component: ParkingLotList, meta : { requiresLogin: true } },
+    {path: "/api/parking_lots", component: UserDashboard, meta : { requiresLogin: true } },
     {path: "/admin/dashboard", component: AdminDashboard, meta: { requiresLogin: true, roles: ['admin'] } },
     {path: "/add_parking_lot", component: AddPLot, meta: { requiresLogin: true, roles: ['admin'] } },
     {path: "/edit_parking_lot/:plot_id", component: EditPLot, meta: { requiresLogin: true, roles: ['admin'] } },
+    {
+        path: "/profile",
+        component: Profile,
+        meta: { requiresLogin: true, roles: ['user', 'admin'] } 
+    },
+    {path:"/api/users", component: UserAnalytics, meta: {requiresLogin: true, roles: ['admin']}},
+    {path:"/history", component: UserHistory, meta: {requiresLogin: true, roles: ['user']}}
 ]
 
 const router = new VueRouter({

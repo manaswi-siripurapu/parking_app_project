@@ -8,7 +8,8 @@ const store = new Vuex.Store({
             show: false,
             message: '',
             type: 'info'
-        }
+        },
+        activeBooking: null,
     },
     mutations: {
         setUser(state, payload) {
@@ -54,7 +55,10 @@ const store = new Vuex.Store({
             state.toast.show = false;
             state.toast.message = '';
             state.toast.type = 'info';
-        }
+        },
+        setActiveBooking(state, booking) {
+            state.activeBooking = booking;
+        },
     },
     actions: {},
 });

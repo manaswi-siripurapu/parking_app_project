@@ -53,13 +53,10 @@ export default {
               <router-link class="nav-link" to="/admin/dashboard">Parking Lots</router-link>
             </li>
             <li class="nav-item">
-              <router-link class="nav-link" to="/history">Parking Spots</router-link>
+              <router-link class="nav-link" to="/bookings">Bookings</router-link>
             </li>
             <li class="nav-item">
-              <router-link class="nav-link" to="/about">User Analytics</router-link>
-            </li>
-            <li class="nav-item">
-              <router-link class="nav-link" to="/about">Users</router-link>
+              <router-link class="nav-link" to="/api/users">User Analytics</router-link>
             </li>
             <li class="nav-item">
               <router-link class="nav-link" to="/profile">My Profile</router-link>
@@ -68,11 +65,6 @@ export default {
               <a class="nav-link" href="#" @click.prevent="logout">Logout</a>
             </li>
           </ul>
-
-          <form class="form-inline my-2 my-lg-0">
-            <input class="form-control mr-sm-2" type="search" placeholder="Search" aria-label="Search">
-            <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
-          </form>
 
         </div>
 

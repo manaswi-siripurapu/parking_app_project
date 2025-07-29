@@ -1,9 +1,19 @@
-from flask_restful import Resource, Api, fields, marshal_with
+from flask_restful import Resource, Api, fields, marshal, marshal_with
 from backend.models import ParkingLot, ParkingSpot, Booking, User, Role, UserRoles, db
 from flask_security import auth_required, current_user
 from flask import jsonify, request, current_app
 from datetime import datetime, timedelta 
 from backend.extensions.cache_ext import cache  
+
+@current_app.errorhandler(401)
+@current_app.errorhandler(403)
+@current_app.errorhandler(404)
+@current_app.errorhandler(500)
+def handle_error(error):
+    response = jsonify({'message': error.description if hasattr(error, 'description') else str(error)})
+    response.status_code = error.code if hasattr(error, 'code') else 500
+    return response
+
 
 api = Api(prefix='/api')
 
@@ -22,7 +32,18 @@ UserList_fields = {
     'email': fields.String,
     'mobile_num': fields.String,
     'age': fields.Integer,
+    'active': fields.Boolean,
     'roles': fields.List(fields.String, attribute='role_names') 
+}
+
+Profile_fields = {
+    'user_id': fields.Integer,
+    'username': fields.String,
+    'email': fields.String,
+    'mobile_num': fields.String,
+    'age': fields.Integer,
+    'active': fields.Boolean,
+    'roles': fields.List(fields.String, attribute='role_names'),
 }
 
 Booking_fields = {
@@ -216,35 +237,61 @@ class ParkingLotListAPI(Resource):
             return {'message': f'Error creating parking lot: {str(e)}'}, 500
 
 class UserListAPI(Resource):
-
     @auth_required('token')
     @marshal_with(UserList_fields)
     def get(self):
         """Retrieves a list of users. Filters for active 'user' role by default."""
+        # NEW: Allow admin to fetch all users, or filter by username/email
+        if not current_user.has_role('admin'):
+            return {'message': 'Permission denied'}, 403 # Only admins can view this list
+
         query_param = request.args.get('query', '').strip()
         
-        users_query = User.query.join(UserRoles).join(Role).filter(
-            Role.name == 'user',
-            User.active == True
-        )
+        users_query = User.query # Start with all users
 
         if query_param:
-            users_query = users_query.filter(User.username.ilike(f'%{query_param}%'))
+            # Filter by username or email (case-insensitive)
+            users_query = users_query.filter(
+                (User.username.ilike(f'%{query_param}%')) |
+                (User.email.ilike(f'%{query_param}%'))
+            )
         
         users = users_query.all()
         return users
 
-Booking_fields = {
-    'booking_id': fields.Integer,
-    'pspot_id': fields.Integer,
-    'user_id': fields.Integer,
-    'start_time': fields.DateTime(dt_format='iso8601'),
-    'end_time': fields.DateTime(dt_format='iso8601', attribute='end_time', default=None),
-    'total_cost': fields.String(attribute='total_cost', default="0.00"), # FIX: Changed to String for db.Numeric
-    'parking_lot_location': fields.String(attribute='parking_spot.parking_lot.location'),
-    'parking_spot_id': fields.Integer(attribute='parking_spot.pspot_id'),
-    'username': fields.String(attribute='user.username')
-}
+    @auth_required('token')
+    @marshal_with(UserList_fields) # Marshal the updated user object
+    def patch(self, user_id): # NEW: Method to update user status
+        """
+        Updates a user's active status (block/unblock).
+        Requires admin role.
+        """
+        try:
+            user_id = int(user_id)
+        except (ValueError, TypeError):
+            return {'message': 'Invalid user ID'}, 400
+
+        if not current_user.has_role('admin'):
+            return {'message': 'Permission denied'}, 403
+        
+        user_to_update = User.query.filter_by(user_id=user_id).first()
+        if not user_to_update:
+            return {'message': 'User not found'}, 404
+
+        data = request.get_json()
+        if not data or 'active' not in data or not isinstance(data['active'], bool):
+            return {'message': 'Missing or invalid "active" status in request body'}, 400
+
+        if user_to_update.has_role('admin') and user_to_update.user_id != current_user.user_id:
+            return {'message': 'Cannot block another administrator account.'}, 403
+
+        try:
+            user_to_update.active = data['active']
+            db.session.commit()
+            return user_to_update, 200 # Return the updated user object
+        except Exception as e:
+            db.session.rollback()
+            return {'message': f'Error updating user status: {str(e)}'}, 500
 
 class BookingAPI(Resource):
     @auth_required('token')
@@ -254,8 +301,7 @@ class BookingAPI(Resource):
         if not data:
             return {'message': 'No input data provided'}, 400
 
-        required_fields = ['plot_id']
-        if not all(field in data for field in required_fields):
+        if 'plot_id' not in data:
             return {'message': 'Missing required fields: plot_id.'}, 400
 
         try:
@@ -267,6 +313,7 @@ class BookingAPI(Resource):
         if not parking_lot:
             return {'message': 'Parking lot not found.'}, 404
 
+        # Get first available spot in this lot
         parking_spot = ParkingSpot.query.filter_by(
             plot_id=plot_id,
             status=False
@@ -275,6 +322,7 @@ class BookingAPI(Resource):
         if not parking_spot:
             return {'message': 'No available parking spots in this lot.'}, 409
 
+        # Check if user already has an active booking
         active_booking_by_user = Booking.query.filter_by(
             user_id=current_user.user_id,
             end_time=None
@@ -291,9 +339,7 @@ class BookingAPI(Resource):
                 total_cost=0.0
             )
             db.session.add(new_booking)
-            
             parking_spot.status = True
-            
             db.session.commit()
             return new_booking, 201
 
@@ -312,7 +358,7 @@ class BookingAPI(Resource):
         booking = Booking.query.filter_by(booking_id=booking_id).first()
         if not booking:
             return {'message': 'Booking not found.'}, 404
-        
+
         if booking.user_id != current_user.user_id:
             return {'message': 'Permission denied: This booking does not belong to you.'}, 403
 
@@ -322,15 +368,19 @@ class BookingAPI(Resource):
         parking_spot = ParkingSpot.query.filter_by(pspot_id=booking.pspot_id).first()
         if not parking_spot:
             return {'message': 'Associated parking spot not found.'}, 500
-        
+
         if not parking_spot.status:
             return {'message': 'Parking spot is not currently marked as occupied.'}, 400
+
+        # SAFER approach: re-fetch the parking lot instead of relying on lazy-loaded backref
+        parking_lot = ParkingLot.query.filter_by(plot_id=parking_spot.plot_id).first()
+        if not parking_lot:
+            return {'message': 'Associated parking lot not found.'}, 500
 
         try:
             booking.end_time = datetime.now()
             duration_hours = (booking.end_time - booking.start_time).total_seconds() / 3600.0
-            parking_lot_price_per_hour = parking_spot.parking_lot.price
-            booking.total_cost = round(duration_hours * parking_lot_price_per_hour, 2)
+            booking.total_cost = round(duration_hours * float(parking_lot.price), 2)  # Force float to avoid Decimal issues
 
             parking_spot.status = False
             
@@ -341,7 +391,29 @@ class BookingAPI(Resource):
             db.session.rollback()
             return {'message': f'Error releasing spot: {str(e)}'}, 500
 
+
+    @auth_required('token')
+    @marshal_with(Booking_fields)
+    def get(self):
+        try:
+            # Fetch all bookings of the current user
+            all_bookings = Booking.query.filter_by(user_id=current_user.user_id).order_by(Booking.start_time.desc()).all()
+            return all_bookings, 200
+        except Exception as e:
+            return {'message': f'Error fetching booking history: {str(e)}'}, 500
+
+        
+class ProfileAPI(Resource):
+    @auth_required('token')
+    @marshal_with(Profile_fields)
+    def get(self):
+        if not current_user.is_authenticated:
+            return {'message': 'Authentication required'}, 401
+        
+        return current_user
+
 api.add_resource(ParkingLotAPI, '/parking_lot/<int:plot_id>')
 api.add_resource(ParkingLotListAPI, '/parking_lots')
 api.add_resource(UserListAPI, '/users')
 api.add_resource(BookingAPI, '/bookings', '/bookings/<int:booking_id>')
+api.add_resource(ProfileAPI, '/profile')

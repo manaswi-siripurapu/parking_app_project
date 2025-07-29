@@ -3,7 +3,7 @@ class Config():
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
 class LocalDevelopmentConfig(Config):
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///database.sqlite3'
+    SQLALCHEMY_DATABASE_URI = 'sqlite:///database_parking_app.sqlite3'
     DEBUG = True
     SECURITY_PASSWORD_HASH = 'bcrypt'
     SECURITY_PASSWORD_SALT = 'this-is-a-salt-very-long-and-unique'
