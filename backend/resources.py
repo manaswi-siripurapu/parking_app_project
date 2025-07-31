@@ -242,13 +242,12 @@ class UserListAPI(Resource):
     @marshal_with(UserList_fields)
     def get(self):
         """Retrieves a list of users. Filters for active 'user' role by default."""
-        # NEW: Allow admin to fetch all users, or filter by username/email
         if not current_user.has_role('admin'):
             return {'message': 'Permission denied'}, 403 # Only admins can view this list
 
         query_param = request.args.get('query', '').strip()
         
-        users_query = User.query # Start with all users
+        users_query = User.query 
 
         if query_param:
             # Filter by username or email (case-insensitive)
@@ -261,12 +260,8 @@ class UserListAPI(Resource):
         return users
 
     @auth_required('token')
-    @marshal_with(UserList_fields) # Marshal the updated user object
-    def patch(self, user_id): # NEW: Method to update user status
-        """
-        Updates a user's active status (block/unblock).
-        Requires admin role.
-        """
+    @marshal_with(UserList_fields) 
+    def patch(self, user_id): 
         try:
             user_id = int(user_id)
         except (ValueError, TypeError):
@@ -289,7 +284,7 @@ class UserListAPI(Resource):
         try:
             user_to_update.active = data['active']
             db.session.commit()
-            return user_to_update, 200 # Return the updated user object
+            return user_to_update, 200 
         except Exception as e:
             db.session.rollback()
             return {'message': f'Error updating user status: {str(e)}'}, 500
@@ -373,7 +368,6 @@ class BookingAPI(Resource):
         if not parking_spot.status:
             return {'message': 'Parking spot is not currently marked as occupied.'}, 400
 
-        # SAFER approach: re-fetch the parking lot instead of relying on lazy-loaded backref
         parking_lot = ParkingLot.query.filter_by(plot_id=parking_spot.plot_id).first()
         if not parking_lot:
             return {'message': 'Associated parking lot not found.'}, 500
@@ -456,10 +450,9 @@ class AnalyticsAPI(Resource):
                 key=lambda x: datetime.strptime(x['month'], '%b %Y')
             )
 
-            return jsonify(result)  # ✅ Make sure this returns proper JSON
+            return jsonify(result)  
 
         except Exception as e:
-            # ✅ Catch and return all errors as JSON
             return {'message': f'Internal server error: {str(e)}'}, 500
 
 api.add_resource(ParkingLotAPI, '/parking_lot/<int:plot_id>')

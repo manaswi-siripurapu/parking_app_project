@@ -9,7 +9,6 @@ export default {
             </p>
 
             <!-- Active Booking Display -->
-            <!-- Session Card: show for user role always -->
             <div v-if="$store.state.loggedin && $store.state.roles && $store.state.roles.includes('user')" class="card shadow-sm mb-4">
                 <div class="card-header bg-primary text-white">
                     <h5 class="mb-0">Your Current Parking Session</h5>
@@ -22,7 +21,6 @@ export default {
                         <small class="ml-2">Checking active session...</small>
                     </div>
 
-                    <!-- ✅ booking exists -->
                     <div v-else-if="activeBooking">
                         <p><strong>Booking ID:</strong> {{ activeBooking.booking_id }}</p>
                         <p><strong>Parking Lot:</strong> {{ activeBooking.parking_lot_location }}</p>
@@ -32,7 +30,6 @@ export default {
                         <button class="btn btn-danger" @click="showReleaseModal(activeBooking.booking_id)">Release Spot</button>
                     </div>
 
-                    <!-- ❌ no active booking -->
                     <div v-else class="alert alert-info my-2" role="alert">
                         You currently have no active parking sessions.
                     </div>
@@ -92,8 +89,8 @@ export default {
             parkingLots: [],
             isLoading: true,
             errorMessage: '',
-            activeBooking: null,        // To store the user's active booking
-            activeBookingLoading: true, // Loading state for active booking
+            activeBooking: null,  
+            activeBookingLoading: true, 
             releaseModalInstance: null,
             releaseBookingId: null,
         };
@@ -153,7 +150,6 @@ export default {
 
                 const bookings = await res.json();
 
-                // ✅ Identify active booking for the current user (no end_time)
                 const active = bookings.find(b =>
                     b.user_id === this.$store.state.user_id && b.end_time === null
                 );
@@ -202,8 +198,8 @@ export default {
                         message: `Spot released! Cost: ₹${data.total_cost}`,
                         type: 'success'
                     });
-                    this.fetchBookings?.(); // Only in history
-                    this.fetchParkingLots?.(); // Only in dashboard
+                    this.fetchBookings?.(); 
+                    this.fetchParkingLots?.(); 
                 } else {
                     try {
                         const errorData = await res.json();
@@ -229,10 +225,9 @@ export default {
             }
         },
         formatDateTime(datetimeStr) {
-            const istOffset = 5.5 * 60; // IST is UTC+5:30 → in minutes
+            const istOffset = 5.5 * 60; 
             const localDate = new Date(datetimeStr);
 
-            // Convert to IST
             const istDate = new Date(localDate.getTime() + istOffset * 60 * 1000);
 
             return istDate.toLocaleString('en-IN', {
@@ -241,20 +236,18 @@ export default {
                 day: 'numeric',
                 hour: '2-digit',
                 minute: '2-digit',
-                hour12: true // or false if you want 24hr format
+                hour12: true 
             });
         },
         handleBookingCreated() {
-            // Give backend a moment to process and store the booking
             setTimeout(() => {
                 this.fetchActiveBooking();
                 this.fetchParkingLots();
-            }, 300); // 300ms delay
+            }, 300); 
         },
         handleParkingLotDeleted(deletedPlotId) {
             this.parkingLots = this.parkingLots.filter(plot => plot.plot_id !== deletedPlotId);
         },
-        // Triggered when user clicks the Release button
         showReleaseModal(bookingId) {
             this.releaseBookingId = bookingId;
             const modal = new bootstrap.Modal(this.$refs.releaseModal);
@@ -262,7 +255,6 @@ export default {
             this.releaseModalInstance = modal;
         },
 
-        // Triggered when user confirms inside modal
         async confirmRelease() {
             const bookingId = this.releaseBookingId;
             this.releaseModalInstance.hide();

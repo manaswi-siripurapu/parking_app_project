@@ -2,13 +2,11 @@ export default {
   props: ['parkingLot', 'hasActiveBooking'], 
   template: `
     <div>
-      <!-- Parking Lot Card -->
       <div class="card mb-3">
         <div class="card-body">
           <h5 class="card-title">{{ parkingLot.location }}</h5>
           <p class="card-text">Total Slots: {{ parkingLot.total_slots }}</p>
           <p class="card-text">Price: ₹{{ parkingLot.price }} per hour</p>
-          <!-- Occupy Button for user -->
           
           <button
             v-if="$store.state.loggedin && $store.state.roles && $store.state.roles.includes('user')"
@@ -95,8 +93,7 @@ export default {
             type: 'success'
           });
 
-          // 🔁 Refresh the current page (UserDashboard)
-          this.$emit('booking-created');  // <-- this reloads the current route & triggers mounted()
+          this.$emit('booking-created');  
         } else {
           this.$store.commit('showToast', {
             message: data.message || 'Failed to occupy spot.',
@@ -113,17 +110,15 @@ export default {
       }
     },
       async deleteParkingLot() {
-          // Ensure this matches the singular endpoint /api/parking_lot/<plot_id>
           const res = await fetch(`${location.origin}/api/parking_lot/${this.parkingLot.plot_id}`, {
               method: 'DELETE',
               headers: {
                   'Authentication-Token': this.$store.state.auth_token,
-                  // 'Content-Type': 'application/json' is not strictly needed for DELETE requests without a body
               }
           });
           if (res.ok) {
               this.$store.commit('showToast', { message: 'Parking lot deleted successfully!', type: 'success' });
-              this.$emit('parking-lot-deleted', this.parkingLot.plot_id); // Notify parent to update list
+              this.$emit('parking-lot-deleted', this.parkingLot.plot_id); 
           } else {
               const errorData = await res.json();
               this.$store.commit('showToast', { message: errorData.message || 'Failed to delete parking lot.', type: 'danger' });
@@ -131,7 +126,6 @@ export default {
           }
       },
       async editParkingLot() {
-          // Redirect to edit page with plot_id
           this.$router.push({ path: `/edit_parking_lot/${this.parkingLot.plot_id}` });
       }
   },

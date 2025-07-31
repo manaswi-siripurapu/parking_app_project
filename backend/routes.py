@@ -80,9 +80,9 @@ def login():
         return jsonify({"error": "Missing required fields (username/email and password)"}), 400
     
     user = None
-    if email: # Prioritize finding by email if provided
+    if email: 
         user = datastore.find_user(email=email)
-    if not user and username: # If not found by email, try by username
+    if not user and username: 
         user = datastore.find_user(username=username)
 
     if not user:
@@ -108,8 +108,8 @@ def register():
     username = data.get('username')
     email = data.get('email')
     password = data.get('password')
-    mobile_num = data.get('mobile_num') # Expect from frontend
-    age = data.get('age')             # Expect from frontend
+    mobile_num = data.get('mobile_num') 
+    age = data.get('age')             
 
     # Basic validation for required fields
     if not (username and email and password and mobile_num and age is not None):

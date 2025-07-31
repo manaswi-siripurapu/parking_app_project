@@ -45,8 +45,6 @@ const Home = {
             </div>
         </div>
     `,
-    // No data or methods needed for this simple display component
-    // If you add any, ensure they are defined here.
 }
 
 const routes = [

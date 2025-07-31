@@ -65,7 +65,7 @@ export default {
             bookings: [],
             isLoading: true,
             errorMessage: '',
-            filter: 'all' // all | active | completed
+            filter: 'all' 
         };
     },
     computed: {
@@ -106,10 +106,9 @@ export default {
             }
         },
         formatDateTime(datetimeStr) {
-            const istOffset = 5.5 * 60; // IST is UTC+5:30 → in minutes
+            const istOffset = 5.5 * 60; 
             const localDate = new Date(datetimeStr);
 
-            // Convert to IST
             const istDate = new Date(localDate.getTime() + istOffset * 60 * 1000);
 
             return istDate.toLocaleString('en-IN', {
@@ -118,7 +117,7 @@ export default {
                 day: 'numeric',
                 hour: '2-digit',
                 minute: '2-digit',
-                hour12: true // or false if you want 24hr format
+                hour12: true 
             });
         },
     },

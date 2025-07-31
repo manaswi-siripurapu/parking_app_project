@@ -46,6 +46,6 @@ import backend.routes
 excel.init_excel(app)
 
 if (__name__ == '__main__'):
-    with app.app_context(): # Ensure this call is within an app context
+    with app.app_context(): 
         initialize_database()
     app.run()

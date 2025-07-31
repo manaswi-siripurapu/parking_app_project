@@ -16,5 +16,3 @@ class LocalDevelopmentConfig(Config):
 
     WTF_CSRF_ENABLED = False
     #csrf can be used to protect against cross-site request forgery attacks
-    #it is enabled by default in flask-wtf, but we are disabling it here for
-    #development purposes. In production, it should be enabled, for higher security.

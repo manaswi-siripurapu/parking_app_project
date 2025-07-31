@@ -68,9 +68,9 @@ export default {
                     this.$store.commit('showToast', { message: 'SignIn successful!', type: 'success' });
 
                     if (data.user.roles && data.user.roles.includes('admin')) {
-                        this.$router.push('/admin/dashboard'); // Redirect admin
+                        this.$router.push('/admin/dashboard'); 
                     } else {
-                        this.$router.push('/api/parking_lots'); // Redirect regular user
+                        this.$router.push('/api/parking_lots'); 
                     }
 
                 } else { 

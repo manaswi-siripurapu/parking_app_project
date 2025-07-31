@@ -129,10 +129,9 @@ export default {
                 if (res.ok) {
                     const updatedUser = await res.json();
                     this.$store.commit('showToast', { message: `User ${updatedUser.username} ${updatedUser.active ? 'activated' : 'blocked'} successfully!`, type: 'success' });
-                    // Update the user in the local array to reflect the change
                     const index = this.users.findIndex(u => u.user_id === userId);
                     if (index !== -1) {
-                        this.$set(this.users, index, updatedUser); // Use Vue.$set for reactivity
+                        this.$set(this.users, index, updatedUser); 
                     }
                 } else {
                     const errorData = await res.json();
@@ -155,7 +154,6 @@ export default {
 
                 this.$store.commit('showToast', { message: "CSV generation started!", type: "success" });
 
-                // Basic polling after 5-7 seconds
                 setTimeout(() => {
                     const downloadUrl = `${location.origin}/api/admin/download_users/User_data_${data.task_id}.csv`;
                     window.open(downloadUrl, '_blank');

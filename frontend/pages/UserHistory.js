@@ -78,7 +78,6 @@ export default {
                     return;
                 }
                 const allBookings = await res.json();
-                // Filter for current user's bookings and sort by start_time (most recent first)
                 this.bookings = allBookings
                     .filter(b => b.user_id === this.$store.state.user_id)
                     .sort((a, b) => new Date(b.start_time) - new Date(a.start_time));
@@ -108,7 +107,6 @@ export default {
                     const data = await res.json();
                     this.$store.commit('showToast', { message: `Spot released! Cost: ₹${data.total_cost}`, type: 'success' });
                     console.log('Spot released:', data);
-                    // Re-fetch bookings to update the list, showing the released booking as completed
                     this.fetchBookings(); 
                 } else {
                     const errorData = await res.json();
@@ -121,10 +119,9 @@ export default {
             }
         },
         formatDateTime(datetimeStr) {
-            const istOffset = 5.5 * 60; // IST is UTC+5:30 → in minutes
+            const istOffset = 5.5 * 60;
             const localDate = new Date(datetimeStr);
 
-            // Convert to IST
             const istDate = new Date(localDate.getTime() + istOffset * 60 * 1000);
 
             return istDate.toLocaleString('en-IN', {
@@ -133,7 +130,7 @@ export default {
                 day: 'numeric',
                 hour: '2-digit',
                 minute: '2-digit',
-                hour12: true // or false if you want 24hr format
+                hour12: true 
             });
         },
     },

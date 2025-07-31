@@ -1,10 +1,10 @@
 const store = new Vuex.Store({
     state: {
         auth_token: null,
-        roles: [], // Initialize as an empty array
+        roles: [], 
         loggedin: false,
         user_id: null,
-        toast: { // This whole 'toast' object must be in state
+        toast: { 
             show: false,
             message: '',
             type: 'info'
@@ -15,7 +15,7 @@ const store = new Vuex.Store({
         setUser(state, payload) {
             if (payload) {
                 state.auth_token = payload.token;
-                state.roles = payload.roles || []; // Ensure it's an array, default to empty
+                state.roles = payload.roles || []; 
                 state.loggedin = true;
                 state.user_id = payload.user_id;
                 localStorage.setItem('user', JSON.stringify(payload));
@@ -24,13 +24,12 @@ const store = new Vuex.Store({
                     const user = JSON.parse(localStorage.getItem('user'));
                     if (user) {
                         state.auth_token = user.token;
-                        state.roles = user.roles || []; // Ensure it's an array, default to empty
+                        state.roles = user.roles || []; 
                         state.loggedin = true;
                         state.user_id = user.user_id;
                     }
                 } catch {
                     console.warn('not logged in or localStorage item invalid');
-                    // Reset state if localStorage item is invalid/corrupted
                     state.auth_token = null;
                     state.roles = [];
                     state.loggedin = false;
@@ -41,7 +40,7 @@ const store = new Vuex.Store({
         },
         logout(state) {
             state.auth_token = null;
-            state.roles = []; // Set to empty array, not null
+            state.roles = []; 
             state.loggedin = false;
             state.user_id = null;
             localStorage.removeItem('user');
@@ -63,6 +62,6 @@ const store = new Vuex.Store({
     actions: {},
 });
 
-store.commit('setUser'); // This line is crucial for initial state hydration
+store.commit('setUser'); 
 
 export default store;

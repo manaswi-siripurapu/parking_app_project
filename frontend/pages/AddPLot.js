@@ -30,15 +30,14 @@ export default {
     data() {
         return {
             location: '',
-            address: '',   // Added: Required by backend
-            pincode: '',   // Added: Required by backend
-            total_slots: null, // Corrected: Renamed from 'capacity'
+            address: '',   
+            pincode: '',   
+            total_slots: null, 
             price: null,
         };
     },
     methods: {
         async submitForm() {
-            // Basic client-side validation (added for better UX)
             if (!this.location || !this.address || !this.pincode || this.total_slots === null || this.price === null) {
                 this.$store.commit('showToast', { message: 'Please fill in all required fields.', type: 'warning' });
                 return;
@@ -74,7 +73,7 @@ export default {
                 });
 
                 if (res.ok) {
-                    const data = await res.json(); // Read response even if not used directly
+                    const data = await res.json(); 
                     this.$store.commit('showToast', { message: 'Parking lot added successfully!', type: 'success' });
                     console.log('Parking lot added successfully:', data);
                     // Clear form fields
@@ -83,7 +82,6 @@ export default {
                     this.pincode = '';
                     this.total_slots = null;
                     this.price = null;
-                    // Redirect after a short delay for user to see success message
                     setTimeout(() => {
                         this.$router.push('/admin/dashboard');
                     }, 200);
@@ -95,7 +93,6 @@ export default {
                     });
                     console.error('Failed to add parking lot:', res.status, errorData.message || res.statusText);
                     if (res.status === 403) {
-                        // Specific handling for permission denied
                         this.$store.commit('showToast', { message: 'You do not have permission to add parking lots. Redirecting to login.', type: 'danger' });
                         setTimeout(() => {
                             this.$store.commit('logout');
@@ -110,6 +107,5 @@ export default {
         },
     },
     components: {
-        // Add any components you might need here
     },
 };

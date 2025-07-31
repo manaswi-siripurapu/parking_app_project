@@ -5,7 +5,6 @@ export default {
             <div class="card shadow-lg p-4 p-md-5" style="max-width: 500px; width: 100%;">
                 <h2 class="card-title text-center mb-4">Edit Parking Lot</h2>
                 
-                <!-- Simplified: No loading spinner, form always visible -->
                 <form @submit.prevent="submitForm">
                     <div class="form-group mb-3">
                         <label for="location">Location</label>
@@ -46,7 +45,7 @@ export default {
     },
     methods: {
         async fetchParkingLotDetails() {
-            const plotId = this.$route.params.plot_id; // Get ID from route params
+            const plotId = this.$route.params.plot_id; 
 
             try {
                 const res = await fetch(`${location.origin}/api/parking_lot/${plotId}`, {
@@ -63,7 +62,6 @@ export default {
                 }
 
                 const data = await res.json();
-                // Populate form fields with fetched data
                 this.location = data.location;
                 this.address = data.address;
                 this.pincode = data.pincode;
@@ -73,13 +71,12 @@ export default {
             } catch (error) {
                 this.$store.commit('showToast', { message: 'Network error. Could not load parking lot details.', type: 'danger' });
                 console.error('Network error fetching parking lot:', error);
-                this.$router.push('/admin/dashboard'); // Redirect on network error
+                this.$router.push('/admin/dashboard'); 
             }
         },
         async submitForm() {
-            const plotId = this.$route.params.plot_id; // Get ID from route params
+            const plotId = this.$route.params.plot_id; 
 
-            // Basic client-side validation (for immediate feedback)
             if (!this.pincode || this.total_slots === null || this.price === null) {
                 this.$store.commit('showToast', { message: 'Please fill in all required fields.', type: 'warning' });
                 return;
@@ -99,7 +96,7 @@ export default {
 
             try {
                 const res = await fetch(`${location.origin}/api/parking_lot/${plotId}`, {
-                    method: 'PATCH', // Use PATCH for partial updates
+                    method: 'PATCH', 
                     headers: {
                         'Content-Type': 'application/json',
                         'Authentication-Token': this.$store.state.auth_token,
@@ -114,7 +111,7 @@ export default {
                 if (res.ok) {
                     console.log('Parking lot updated successfully!');
                     this.$store.commit('showToast', { message: data.message || 'Parking lot updated successfully!', type: 'success' });
-                    this.$router.push('/admin/dashboard'); // Redirect after successful update
+                    this.$router.push('/admin/dashboard'); 
                 } else {
                     const errorData = await res.json();
                     console.error('Failed to update parking lot:', res.status, errorData.message || res.statusText);
@@ -129,7 +126,6 @@ export default {
         },
     },
     async mounted() {
-        // Fetch existing data when the component is mounted
         await this.fetchParkingLotDetails();
     },
 };

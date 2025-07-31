@@ -36,7 +36,6 @@ export default {
                     </div>
                     
                     <hr class="my-4">
-                    <!-- Removed active booking display for simplicity -->
                 </div>
             </div>
         </div>

@@ -48,14 +48,14 @@ export default {
             password: '',
             mobile_num: '',
             age: null,
-            errorMessage: '',   // Local error message
-            successMessage: '', // Local success message
+            errorMessage: '',   
+            successMessage: '', 
         }
     },
     methods: {
         async submitRegister() {
-            this.errorMessage = '';   // Clear previous messages
-            this.successMessage = ''; // Clear previous messages
+            this.errorMessage = '';   
+            this.successMessage = ''; 
 
             if (!this.username || !this.email || !this.password || !this.mobile_num || this.age === null) {
                 this.errorMessage = 'Please fill in all required fields.';
@@ -94,7 +94,6 @@ export default {
                     this.mobile_num = '';
                     this.age = null;
 
-                    // Redirect to login after a short delay
                     setTimeout(() => {
                         this.$router.push('/login');
                     }, 1000);
@@ -103,7 +102,6 @@ export default {
                     if (res.status === 409) {
                         this.errorMessage = errorData.error || 'User with this email or username already exists.';
                     } else {
-                        // Handle other potential errors (e.g., 500 from backend)
                         this.errorMessage = errorData.error || 'Registration failed. Please try again.';
                     }
                 }

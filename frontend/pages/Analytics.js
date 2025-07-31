@@ -77,7 +77,6 @@ export default {
 
                 this.analyticsData = await res.json();
 
-                // Wait until canvas elements are rendered
                 setTimeout(() => {
                     this.renderCharts();
                 }, 100);
