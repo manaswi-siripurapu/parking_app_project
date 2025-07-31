@@ -121,16 +121,21 @@ export default {
             }
         },
         formatDateTime(datetimeStr) {
-            const options = {
+            const istOffset = 5.5 * 60; // IST is UTC+5:30 → in minutes
+            const localDate = new Date(datetimeStr);
+
+            // Convert to IST
+            const istDate = new Date(localDate.getTime() + istOffset * 60 * 1000);
+
+            return istDate.toLocaleString('en-IN', {
                 year: 'numeric',
                 month: 'short',
                 day: 'numeric',
                 hour: '2-digit',
                 minute: '2-digit',
-            };
-            return new Date(datetimeStr).toLocaleString(undefined, options);
+                hour12: true // or false if you want 24hr format
+            });
         },
-
     },
     async mounted() {
         await this.fetchBookings();

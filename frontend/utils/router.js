@@ -8,6 +8,9 @@ import EditPLot from "../pages/EditPLot.js";
 import Profile from "../pages/Profile.js"
 import UserAnalytics from "../pages/UserAnalytics.js";
 import UserHistory from "../pages/UserHistory.js";
+import About from "../pages/About.js"
+import Bookings from "../pages/Bookings.js";
+import Analytics from "../pages/Analytics.js"; 
 
 Vue.use(VueRouter);
 
@@ -60,7 +63,14 @@ const routes = [
         meta: { requiresLogin: true, roles: ['user', 'admin'] } 
     },
     {path:"/api/users", component: UserAnalytics, meta: {requiresLogin: true, roles: ['admin']}},
-    {path:"/history", component: UserHistory, meta: {requiresLogin: true, roles: ['user']}}
+    {path:"/history", component: UserHistory, meta: {requiresLogin: true, roles: ['user']}},
+    {path:"/about", component: About},
+    {path: "/bookings", component: Bookings, meta: {requiresLogin: true, roles: ['admin']}},
+    {
+        path: "/analytics", 
+        component: Analytics,
+        meta: { requiresLogin: true, roles: ['admin'] }
+    },
 ]
 
 const router = new VueRouter({

@@ -39,52 +39,52 @@ def initialize_database():
 
         db.session.commit()
 
-        if not ParkingLot.query.filter_by(location='Downtown Plaza').first():
-            lot1 = ParkingLot(
-                location='Downtown Plaza',
-                address='123 Main St, City Center',
-                pincode='110001',
-                total_slots=3,
-                price=15.00
-            )
-            db.session.add(lot1)
-            db.session.commit() 
+        # if not ParkingLot.query.filter_by(location='Downtown Plaza').first():
+        #     lot1 = ParkingLot(
+        #         location='Downtown Plaza',
+        #         address='123 Main St, City Center',
+        #         pincode='110001',
+        #         total_slots=3,
+        #         price=15.00
+        #     )
+        #     db.session.add(lot1)
+        #     db.session.commit() 
 
-            for _ in range(lot1.total_slots):
-                db.session.add(ParkingSpot(plot_id=lot1.plot_id, status=False))
-            db.session.commit()
-            print(f"Created Parking Lot: {lot1.location} with {lot1.total_slots} spots.")
+        #     for _ in range(lot1.total_slots):
+        #         db.session.add(ParkingSpot(plot_id=lot1.plot_id, status=False))
+        #     db.session.commit()
+        #     print(f"Created Parking Lot: {lot1.location} with {lot1.total_slots} spots.")
 
-        if not ParkingLot.query.filter_by(location='Tech Park Garage').first():
-            lot2 = ParkingLot(
-                location='Tech Park Garage',
-                address='45 Innovation Ave, Tech City',
-                pincode='560066',
-                total_slots=2,
-                price=20.50
-            )
-            db.session.add(lot2)
-            db.session.commit()
+        # if not ParkingLot.query.filter_by(location='Tech Park Garage').first():
+        #     lot2 = ParkingLot(
+        #         location='Tech Park Garage',
+        #         address='45 Innovation Ave, Tech City',
+        #         pincode='560066',
+        #         total_slots=2,
+        #         price=20.50
+        #     )
+        #     db.session.add(lot2)
+        #     db.session.commit()
 
-            for _ in range(lot2.total_slots):
-                db.session.add(ParkingSpot(plot_id=lot2.plot_id, status=False))
-            db.session.commit()
-            print(f"Created Parking Lot: {lot2.location} with {lot2.total_slots} spots.")
+        #     for _ in range(lot2.total_slots):
+        #         db.session.add(ParkingSpot(plot_id=lot2.plot_id, status=False))
+        #     db.session.commit()
+        #     print(f"Created Parking Lot: {lot2.location} with {lot2.total_slots} spots.")
 
-        if not ParkingLot.query.filter_by(location='Riverside Parking').first():
-            lot3 = ParkingLot(
-                location='Riverside Parking',
-                address='789 Riverfront Rd, Old Town',
-                pincode='400001',
-                total_slots=1, 
-                price=10.00
-            )
-            db.session.add(lot3)
-            db.session.commit()
+        # if not ParkingLot.query.filter_by(location='Riverside Parking').first():
+        #     lot3 = ParkingLot(
+        #         location='Riverside Parking',
+        #         address='789 Riverfront Rd, Old Town',
+        #         pincode='400001',
+        #         total_slots=1, 
+        #         price=10.00
+        #     )
+        #     db.session.add(lot3)
+        #     db.session.commit()
 
-            for _ in range(lot3.total_slots):
-                db.session.add(ParkingSpot(plot_id=lot3.plot_id, status=False))
-            db.session.commit()
-            print(f"Created Parking Lot: {lot3.location} with {lot3.total_slots} spots.")
+        #     for _ in range(lot3.total_slots):
+        #         db.session.add(ParkingSpot(plot_id=lot3.plot_id, status=False))
+        #     db.session.commit()
+        #     print(f"Created Parking Lot: {lot3.location} with {lot3.total_slots} spots.")
 
         print("Initial data creation complete.")

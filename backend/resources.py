@@ -4,6 +4,7 @@ from flask_security import auth_required, current_user
 from flask import jsonify, request, current_app
 from datetime import datetime, timedelta 
 from backend.extensions.cache_ext import cache  
+from sqlalchemy import func, extract
 
 @current_app.errorhandler(401)
 @current_app.errorhandler(403)
@@ -396,11 +397,16 @@ class BookingAPI(Resource):
     @marshal_with(Booking_fields)
     def get(self):
         try:
-            # Fetch all bookings of the current user
-            all_bookings = Booking.query.filter_by(user_id=current_user.user_id).order_by(Booking.start_time.desc()).all()
+            if current_user.has_role('admin'):
+                # Admins see all bookings
+                all_bookings = Booking.query.order_by(Booking.start_time.desc()).all()
+            else:
+                # Normal users see only their own bookings
+                all_bookings = Booking.query.filter_by(user_id=current_user.user_id).order_by(Booking.start_time.desc()).all()
             return all_bookings, 200
         except Exception as e:
             return {'message': f'Error fetching booking history: {str(e)}'}, 500
+
 
         
 class ProfileAPI(Resource):
@@ -411,9 +417,54 @@ class ProfileAPI(Resource):
             return {'message': 'Authentication required'}, 401
         
         return current_user
+    
+class AnalyticsAPI(Resource):
+    @auth_required('token')
+    def get(self):
+        try:
+            if not current_user.has_role('admin'):
+                return {'message': 'Permission denied'}, 403
+
+            today = datetime.now()
+            monthly_data = {}
+            for i in range(12):
+                month_date = (today.replace(day=1) - timedelta(days=30 * i))
+                month_key = month_date.strftime('%Y-%m')
+                monthly_data[month_key] = {
+                    'month': month_date.strftime('%b %Y'),
+                    'total_revenue': 0.0,
+                    'total_hours_parked': 0.0
+                }
+
+            bookings = db.session.query(
+                extract('year', Booking.end_time).label('year'),
+                extract('month', Booking.end_time).label('month'),
+                func.sum(Booking.total_cost).label('revenue'),
+                func.sum(
+                    (func.julianday(Booking.end_time) - func.julianday(Booking.start_time)) * 24.0
+                ).label('total_hours_parked')
+            ).filter(Booking.end_time != None).group_by('year', 'month').all()
+
+            for row in bookings:
+                month_key = f"{int(row.year):04d}-{int(row.month):02d}"
+                if month_key in monthly_data:
+                    monthly_data[month_key]['total_revenue'] = float(row.revenue or 0.0)
+                    monthly_data[month_key]['total_hours_parked'] = float(row.total_hours_parked or 0.0)
+
+            result = sorted(
+                monthly_data.values(),
+                key=lambda x: datetime.strptime(x['month'], '%b %Y')
+            )
+
+            return jsonify(result)  # ✅ Make sure this returns proper JSON
+
+        except Exception as e:
+            # ✅ Catch and return all errors as JSON
+            return {'message': f'Internal server error: {str(e)}'}, 500
 
 api.add_resource(ParkingLotAPI, '/parking_lot/<int:plot_id>')
 api.add_resource(ParkingLotListAPI, '/parking_lots')
 api.add_resource(UserListAPI, '/users')
 api.add_resource(BookingAPI, '/bookings', '/bookings/<int:booking_id>')
 api.add_resource(ProfileAPI, '/profile')
+api.add_resource(AnalyticsAPI, '/analytics')

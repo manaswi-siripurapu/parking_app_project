@@ -72,13 +72,13 @@ export default {
                     <div class="modal-content rounded-3 shadow">
                     <div class="modal-header bg-danger text-white">
                         <h5 class="modal-title" id="releaseModalLabel">Release Parking Spot</h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" @click="closeReleaseModal"></button>
                     </div>
                     <div class="modal-body">
                         <p>Are you sure you want to release this parking spot?</p>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal" @click="closeReleaseModal">Cancel</button>
                         <button type="button" class="btn btn-danger rounded-pill" @click="confirmRelease">Yes, Release</button>
                     </div>
                     </div>
@@ -135,6 +135,8 @@ export default {
         },
         async fetchActiveBooking() {
             this.activeBookingLoading = true;
+            this.errorMessage = '';
+
             try {
                 const res = await fetch(`${location.origin}/api/bookings`, {
                     headers: {
@@ -142,32 +144,33 @@ export default {
                     }
                 });
 
-                if (res.status === 204) {
-                    this.$store.commit('setActiveBooking', null);
-                    this.activeBooking = null;
-                } else {
-                    const booking = await res.json();
+                if (!res.ok) {
+                    const errorData = await res.json();
+                    this.errorMessage = errorData.message || 'Failed to fetch active booking.';
+                    this.$store.commit('showToast', { message: this.errorMessage, type: 'danger' });
+                    return;
+                }
 
-                    // ✅ Add this validation check:
-                    if (
-                        booking &&
-                        booking.booking_id &&
-                        booking.start_time &&
-                        booking.parking_lot_location &&
-                        booking.parking_spot_id
-                    ) {
-                        this.activeBooking = booking;
-                        this.$store.commit('setActiveBooking', booking);
-                    } else {
-                        this.activeBooking = null;
-                        this.$store.commit('setActiveBooking', null);
-                    }
+                const bookings = await res.json();
+
+                // ✅ Identify active booking for the current user (no end_time)
+                const active = bookings.find(b =>
+                    b.user_id === this.$store.state.user_id && b.end_time === null
+                );
+
+                if (active) {
+                    this.activeBooking = active;
+                    this.$store.commit('setActiveBooking', active);
+                } else {
+                    this.activeBooking = null;
+                    this.$store.commit('setActiveBooking', null);
                 }
 
             } catch (error) {
-                console.error('Network error fetching active booking:', error);
+                this.errorMessage = 'Network error while fetching active booking.';
+                console.error('Network error:', error);
                 this.$store.commit('showToast', {
-                    message: 'Network error while fetching booking.',
+                    message: this.errorMessage,
                     type: 'danger'
                 });
             } finally {
@@ -194,27 +197,27 @@ export default {
                 });
 
                 if (res.ok) {
-                const data = await res.json();
-                this.$store.commit('showToast', {
-                    message: `Spot released! Cost: ₹${data.total_cost}`,
-                    type: 'success'
-                });
-                this.fetchBookings?.(); // Only in history
-                this.fetchParkingLots?.(); // Only in dashboard
+                    const data = await res.json();
+                    this.$store.commit('showToast', {
+                        message: `Spot released! Cost: ₹${data.total_cost}`,
+                        type: 'success'
+                    });
+                    this.fetchBookings?.(); // Only in history
+                    this.fetchParkingLots?.(); // Only in dashboard
                 } else {
-                try {
-                    const errorData = await res.json();
-                    this.$store.commit('showToast', {
-                    message: errorData.message || 'Failed to release spot.',
-                    type: 'danger'
-                    });
-                } catch (jsonErr) {
-                    this.$store.commit('showToast', {
-                    message: 'Unexpected server response. Please try again.',
-                    type: 'danger'
-                    });
-                    console.error('Non-JSON response received:', jsonErr);
-                }
+                    try {
+                        const errorData = await res.json();
+                        this.$store.commit('showToast', {
+                            message: errorData.message || 'Failed to release spot.',
+                            type: 'danger'
+                        });
+                    } catch (jsonErr) {
+                        this.$store.commit('showToast', {
+                            message: 'Unexpected server response. Please try again.',
+                            type: 'danger'
+                        });
+                        console.error('Non-JSON response received:', jsonErr);
+                    }
                 }
 
             } catch (error) {
@@ -224,16 +227,22 @@ export default {
                 });
                 console.error('Network error during release:', error);
             }
-            },
+        },
         formatDateTime(datetimeStr) {
-            const options = {
+            const istOffset = 5.5 * 60; // IST is UTC+5:30 → in minutes
+            const localDate = new Date(datetimeStr);
+
+            // Convert to IST
+            const istDate = new Date(localDate.getTime() + istOffset * 60 * 1000);
+
+            return istDate.toLocaleString('en-IN', {
                 year: 'numeric',
                 month: 'short',
                 day: 'numeric',
                 hour: '2-digit',
                 minute: '2-digit',
-            };
-            return new Date(datetimeStr).toLocaleString(undefined, options);
+                hour12: true // or false if you want 24hr format
+            });
         },
         handleBookingCreated() {
             // Give backend a moment to process and store the booking
@@ -270,20 +279,25 @@ export default {
                 });
 
                 if (res.ok) {
-                const data = await res.json();
-                this.$store.commit('showToast', { message: `Spot released! Cost: ₹${data.total_cost}`, type: 'success' });
-                this.activeBooking = null;
-                this.fetchParkingLots();
+                    const data = await res.json();
+                    this.$store.commit('showToast', { message: `Spot released! Cost: ₹${data.total_cost}`, type: 'success' });
+                    this.activeBooking = null;
+                    this.fetchActiveBooking();
+                    this.fetchParkingLots();
                 } else {
-                const errorData = await res.json();
-                this.$store.commit('showToast', { message: errorData.message || 'Failed to release spot.', type: 'danger' });
+                    const errorData = await res.json();
+                    this.$store.commit('showToast', { message: errorData.message || 'Failed to release spot.', type: 'danger' });
                 }
             } catch (error) {
                 console.error('Network error during release:', error);
                 this.$store.commit('showToast', { message: 'Network error during release.', type: 'danger' });
             }
         },
-
+        closeReleaseModal() {
+            if (this.releaseModalInstance) {
+                this.releaseModalInstance.hide();
+            }
+        },
     },
     async mounted() {
         await Promise.all([

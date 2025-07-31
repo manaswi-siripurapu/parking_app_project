@@ -1,0 +1,5 @@
+plot_id,location,address,pincode,total_slots,price
+1,location1,address1,111111,5,100.00
+2,Downtown Plaza,"123 Main St, City Center",110001,3,15.00
+3,Tech Park Garage,"45 Innovation Ave, Tech City",560066,2,20.50
+4,Riverside Parking,"789 Riverfront Rd, Old Town",400001,1,10.00

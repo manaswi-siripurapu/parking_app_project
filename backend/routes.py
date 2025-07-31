@@ -1,8 +1,10 @@
 from datetime import datetime
-from flask import current_app as app, jsonify, render_template, request, send_file
+from flask import send_from_directory
+from flask import current_app as app, jsonify, render_template, request, send_file, send_from_directory
 from flask_security import auth_required, verify_password, hash_password
-from backend.celery.tasks import add, create_csv
+from backend.celery.tasks import add, create_csv, export_users_csv
 from celery.result import AsyncResult
+from flask_security import roles_required
 
 datastore = app.security.datastore
 cache = app.cache
@@ -41,6 +43,20 @@ def getCSV(csv_task_id):
         return send_file(f'./backend/celery/user-downloads/{result.result}'), 200
     else:
         return {'message': 'task is not ready yet'}, 405
+
+@app.route('/api/admin/export_users', methods=['GET'])
+@auth_required('token')
+@roles_required('admin')
+def trigger_export_users():
+    task = export_users_csv.delay()
+    return jsonify({'message': 'User export task started', 'task_id': task.id}), 202
+
+@app.route('/api/admin/download_users/<filename>', methods=['GET'])
+@auth_required('token')
+@roles_required('admin')
+def download_user_csv(filename):
+    path = './backend/celery/user-downloads'
+    return send_from_directory(path, filename, as_attachment=True)
 
 @app.get('/cache')
 @cache.cached(timeout = 5)

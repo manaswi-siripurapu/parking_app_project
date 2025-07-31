@@ -1,8 +1,7 @@
 export default {
-    name: 'UserAnalytics',
     template: `
         <div class="container my-4">
-            <h1 class="display-4 text-center mb-3">User Analytics</h1>
+            <h1 class="display-4 text-center mb-3">Users</h1>
             <p class="lead text-center text-muted mb-4">Manage users and their statuses.</p>
 
             <!-- Search Bar -->
@@ -61,6 +60,12 @@ export default {
                         </tr>
                     </tbody>
                 </table>
+            </div>
+
+            <div class="text-center my-4">
+                <button class="btn btn-primary btn-lg" @click="downloadUsersCSV">
+                    Download User Details
+                </button>
             </div>
         </div>
     `,
@@ -138,7 +143,28 @@ export default {
                 this.$store.commit('showToast', { message: 'Network error during status update. Please try again.', type: 'danger' });
                 console.error('Network error during status update:', error);
             }
-        }
+        },
+        async downloadUsersCSV() {
+            try {
+                const res = await fetch(`${location.origin}/api/admin/export_users`, {
+                    headers: { 'Authentication-Token': this.$store.state.auth_token }
+                });
+
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.message || 'Failed to export users');
+
+                this.$store.commit('showToast', { message: "CSV generation started!", type: "success" });
+
+                // Basic polling after 5-7 seconds
+                setTimeout(() => {
+                    const downloadUrl = `${location.origin}/api/admin/download_users/User_data_${data.task_id}.csv`;
+                    window.open(downloadUrl, '_blank');
+                }, 7000);
+            } catch (error) {
+                this.$store.commit('showToast', { message: error.message, type: 'danger' });
+                console.error(error);
+            }
+        },
     },
     async mounted() {
         await this.fetchUsers();

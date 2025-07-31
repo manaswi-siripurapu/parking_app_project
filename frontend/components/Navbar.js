@@ -16,6 +16,9 @@ export default {
             <li class="nav-item">
               <router-link class="nav-link" to="/register">SignUp</router-link>
             </li>
+            <li class="nav-item">
+              <router-link class="nav-link" to="/about">About</router-link>
+            </li>
           </ul>
         </div>
 
@@ -56,10 +59,16 @@ export default {
               <router-link class="nav-link" to="/bookings">Bookings</router-link>
             </li>
             <li class="nav-item">
-              <router-link class="nav-link" to="/api/users">User Analytics</router-link>
+              <router-link class="nav-link" to="/api/users">Users</router-link>
+            </li>
+            <li class="nav-item">
+              <router-link class="nav-link" to="/analytics">Summary</router-link> <!-- FIX: Updated route and text -->
             </li>
             <li class="nav-item">
               <router-link class="nav-link" to="/profile">My Profile</router-link>
+            </li>
+            <li class="nav-item">
+              <router-link class="nav-link" to="/about">About</router-link>
             </li>
             <li class="nav-item">
               <a class="nav-link" href="#" @click.prevent="logout">Logout</a>
