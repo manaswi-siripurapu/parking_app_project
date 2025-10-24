@@ -1,9 +1,11 @@
+import os
+
 class Config():
     DEBUG = False
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
 class LocalDevelopmentConfig(Config):
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///database_parking_app.sqlite3'
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')
     DEBUG = True
     SECURITY_PASSWORD_HASH = 'bcrypt'
     SECURITY_PASSWORD_SALT = 'this-is-a-salt-very-long-and-unique'
