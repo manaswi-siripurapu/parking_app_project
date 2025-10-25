@@ -1,0 +1,39 @@
+# Git specific files
+.git/
+.gitignore
+
+# VS Code specific files
+.vscode/
+
+# Python virtual environment
+.env
+venv/
+
+# Python cache files
+**/__pycache__/
+*.pyc
+
+# Local database and instance folder
+instance/
+*.db
+*.sqlite3
+
+# Celery generated files
+celerybeat-schedule
+
+# User-specific or generated data within backend
+backend/celery/user-downloads/
+
+# Frontend build artifacts and dependencies
+# frontend/node_modules/
+# frontend/build/
+# frontend/dist/
+
+# Documentation and config files not needed in the final image
+Dockerfile
+README.md
+runtime.txt
+
+# Any OS specific files (like on macOS)
+# .DS_Store
+
